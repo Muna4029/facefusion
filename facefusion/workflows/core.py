@@ -5,9 +5,19 @@ from facefusion.audio import create_empty_audio_frame, get_audio_frame, get_voic
 from facefusion.common_helper import get_first
 from facefusion.filesystem import filter_audio_paths, is_video
 from facefusion.processors.core import get_processors_modules
-from facefusion.temp_helper import clear_temp_directory, create_temp_directory
-from facefusion.temp_helper import get_temp_file_path
-from facefusion.vision import conditional_merge_vision_mask, extract_vision_mask, read_static_image, read_static_images, read_static_video_frame, write_image
+from facefusion.temp_helper import (
+	clear_temp_directory,
+	create_temp_directory,
+	get_temp_file_path,
+)
+from facefusion.vision import (
+	conditional_merge_vision_mask,
+	extract_vision_mask,
+	read_static_image,
+	read_static_images,
+	read_static_video_frame,
+	write_image,
+)
 
 
 def is_process_stopping() -> bool:

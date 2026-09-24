@@ -8,13 +8,26 @@ from facefusion import ffmpeg, logger, process_manager, state_manager, translato
 from facefusion.audio import count_audio_frame_total
 from facefusion.common_helper import get_first
 from facefusion.content_analyser import analyse_image
-from facefusion.filesystem import filter_audio_paths, is_video, move_file
+from facefusion.filesystem import copy_file, filter_audio_paths, is_video, move_file
 from facefusion.processors.core import get_processors_modules
-from facefusion.temp_helper import clear_temp_directory, get_temp_file_path, get_temp_frame_sequence_paths
+from facefusion.temp_helper import (
+	clear_temp_directory,
+	get_temp_file_path,
+	get_temp_frame_sequence_paths,
+)
 from facefusion.time_helper import calculate_end_time
 from facefusion.types import ErrorCode
-from facefusion.vision import detect_image_resolution, pack_resolution, restrict_image_resolution, scale_resolution
-from facefusion.workflows.core import conditional_process_temp_frame, is_process_stopping, prepare_temp
+from facefusion.vision import (
+	detect_image_resolution,
+	pack_resolution,
+	restrict_image_resolution,
+	scale_resolution,
+)
+from facefusion.workflows.core import (
+	conditional_process_temp_frame,
+	is_process_stopping,
+	prepare_temp,
+)
 
 
 def process(start_time : float) -> ErrorCode:
@@ -69,6 +82,10 @@ def process_frames() -> ErrorCode:
 	temp_frame_paths = get_temp_frame_sequence_paths(state_manager.get_item('target_path'), audio_frame_total, '%08d')
 
 	if temp_frame_paths:
+		# Create temp frames from the prepared image for image targets
+		temp_image_path = get_temp_file_path(state_manager.get_item('target_path'))
+		for temp_frame_path in temp_frame_paths:
+			copy_file(temp_image_path, temp_frame_path)
 		with tqdm(total = len(temp_frame_paths), desc = translator.get('processing'), unit = 'frame', ascii = ' =', disable = state_manager.get_item('log_level') in [ 'warn', 'error' ]) as progress:
 			progress.set_postfix(execution_providers = state_manager.get_item('execution_providers'))
 
