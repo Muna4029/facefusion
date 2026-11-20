@@ -2,9 +2,9 @@
 
 import os
 
-os.environ['OMP_NUM_THREADS'] = '1'
+os.environ["OMP_NUM_THREADS"] = "1" if os.name != "nt" else "2"
 
 from facefusion import core
 
-if __name__ == '__main__':
-	core.cli()
+if __name__ == "__main__":
+    core.cli()
