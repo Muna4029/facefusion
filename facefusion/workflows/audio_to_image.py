@@ -42,6 +42,8 @@ def process(start_time : float) -> ErrorCode:
 
 def setup() -> ErrorCode:
 	if analyse_image(state_manager.get_item('target_path')):
+		# Ensure temp directory is prepared/cleaned even when analysis indicates an early return
+		prepare_temp()
 		return 3
 
 	prepare_temp()
@@ -53,13 +55,31 @@ def prepare_image() -> ErrorCode:
 	temp_image_resolution = restrict_image_resolution(state_manager.get_item('target_path'), output_image_resolution)
 
 	logger.info(translator.get('copying_image').format(resolution = pack_resolution(temp_image_resolution)), __name__)
-	if ffmpeg.copy_image(state_manager.get_item('target_path'), temp_image_resolution):
+	src = state_manager.get_item('target_path')
+	# First attempt to copy the image
+	if ffmpeg.copy_image(src, temp_image_resolution):
 		logger.debug(translator.get('copying_image_succeeded'), __name__)
-	else:
-		logger.error(translator.get('copying_image_failed'), __name__)
-		process_manager.end()
-		return 1
-	return 0
+		return 0
+
+	# If the copy failed, try removing a pre-existing temp/output file that ffmpeg may refuse to overwrite
+	try:
+		base, _ = os.path.splitext(src)
+		dst = base + '-' + pack_resolution(temp_image_resolution) + '.jpg'
+		if os.path.exists(dst):
+			logger.debug('Removing existing temp image before retry: {}'.format(dst), __name__)
+			os.remove(dst)
+	except Exception as e:
+		# Non-fatal: log and proceed to retry copy
+		logger.debug('Could not remove existing temp image (will retry copy): {}'.format(e), __name__)
+
+	# Retry the copy once after attempting to remove conflicting file
+	if ffmpeg.copy_image(src, temp_image_resolution):
+		logger.debug(translator.get('copying_image_succeeded'), __name__)
+		return 0
+
+	logger.error(translator.get('copying_image_failed'), __name__)
+	process_manager.end()
+	return 1
 
 
 def process_frames() -> ErrorCode:

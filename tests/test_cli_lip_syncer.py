@@ -16,7 +16,15 @@ def before_all() -> None:
 		'https://github.com/facefusion/facefusion-assets/releases/download/examples-3.0.0/source.mp3',
 		'https://github.com/facefusion/facefusion-assets/releases/download/examples-3.0.0/target-240p.mp4'
 	])
-	subprocess.run([ 'ffmpeg', '-i', get_test_example_file('target-240p.mp4'), '-vframes', '1', get_test_example_file('target-240p.jpg') ])
+	# ensure we don't prompt ffmpeg to overwrite an existing file; only create if missing
+	out_file = get_test_example_file('target-240p.jpg')
+	in_file = get_test_example_file('target-240p.mp4')
+	import os
+	if not os.path.exists(out_file):
+		subprocess.run(['ffmpeg', '-y', '-i', in_file, '-vframes', '1', out_file], check=True)
+	else:
+		# target already exists; skip creating to avoid interactive prompts/overwrite
+		pass
 
 
 @pytest.fixture(scope = 'function', autouse = True)
